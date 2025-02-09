@@ -148,18 +148,21 @@ public class RestClientTests
     {
         // Arrange
         var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        // Реальные данные BTC/USD на момент написания теста (2025-02-09)
+        // Получены через: curl https://api-pub.bitfinex.com/v2/ticker/tBTCUSD
+        // BID, BID_SIZE, ASK, ASK_SIZE, DAILY_CHANGE, DAILY_CHANGE_RELATIVE, LAST_PRICE, VOLUME, HIGH, LOW
         var expectedTickerArray = @"[
             [
-                43986.0,           // BID
-                24.31637567,       // BID_SIZE
-                43987.0,           // ASK
-                28.66523066,       // ASK_SIZE
-                -821.0,            // DAILY_CHANGE
-                -0.0183,           // DAILY_CHANGE_RELATIVE
-                43986.0,           // LAST_PRICE
-                1247.05793468,     // VOLUME
-                45039.0,           // HIGH
-                43371.0            // LOW
+                96067.0,
+                5.24148622,
+                96068.0,
+                4.93945737,
+                -69.0,
+                -0.00071773,
+                96067.0,
+                420.33711804,
+                97366.0,
+                95748.0
             ]
         ]";
 
@@ -183,15 +186,15 @@ public class RestClientTests
 
         // Assert
         Assert.NotNull(ticker);
-        Assert.Equal(43986.0m, ticker.Bid);
-        Assert.Equal(24.31637567m, ticker.BidSize);
-        Assert.Equal(43987.0m, ticker.Ask);
-        Assert.Equal(28.66523066m, ticker.AskSize);
-        Assert.Equal(-821.0m, ticker.DailyChange);
-        Assert.Equal(-0.0183m, ticker.DailyChangeRelative);
-        Assert.Equal(43986.0m, ticker.LastPrice);
-        Assert.Equal(1247.05793468m, ticker.Volume);
-        Assert.Equal(45039.0m, ticker.High);
-        Assert.Equal(43371.0m, ticker.Low);
+        Assert.Equal(96067.0m, ticker.Bid);
+        Assert.Equal(5.24148622m, ticker.BidSize);
+        Assert.Equal(96068.0m, ticker.Ask);
+        Assert.Equal(4.93945737m, ticker.AskSize);
+        Assert.Equal(-69.0m, ticker.DailyChange);
+        Assert.Equal(-0.00071773m, ticker.DailyChangeRelative);
+        Assert.Equal(96067.0m, ticker.LastPrice);
+        Assert.Equal(420.33711804m, ticker.Volume);
+        Assert.Equal(97366.0m, ticker.High);
+        Assert.Equal(95748.0m, ticker.Low);
     }
 } 
