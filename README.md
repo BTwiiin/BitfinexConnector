@@ -18,3 +18,22 @@ Connector
 │── Connector.WPF         # WPF-приложение (паттерн MVVM)
 │── README.md             # Документация проекта
 ```
+## 🔧 Установка
+### **1. Клонирование репозитория**
+```sh
+git clone https://github.com/BTwiiin/BitfinexConnector.git
+cd Connector
+```
+### **2. Установка зависимостей**
+```sh
+dotnet restore
+```
+### **3. Запуск тестов**
+```sh
+dotnet test
+```
+### **4. Запуск проекта**
+```sh
+dotnet restore
+dotnet run --project Connector.WPF
+```
