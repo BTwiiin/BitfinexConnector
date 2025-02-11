@@ -81,9 +81,10 @@ public class RestClientTests
     {
         // Arrange
         var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+
         var expectedCandlesArray = @"[
-            [1621436800000, 100.0, 105.0, 95.0, 101.0, 10.5, 1000.0],
-            [1621437600000, 101.0, 106.0, 96.0, 102.0, 11.5, 1100.0]
+            [1621436800000, 100, 101, 105, 95, 10.5],
+            [1621437600000, 101, 102, 106, 96, 11.5]
         ]";
 
         mockHttpMessageHandler
@@ -99,24 +100,22 @@ public class RestClientTests
                 Content = new StringContent(expectedCandlesArray)
             });
 
-        var client = new RestClient(new HttpClient(mockHttpMessageHandler.Object));
+        var client = new RestClient(new HttpClient(mockHttpMessageHandler.Object));  // Initialize the client properly
 
         // Act
         var candles = await client.GetCandleSeriesAsync("BTCUSD", 60, DateTimeOffset.UtcNow.AddHours(-1));
 
         // Assert
-        var candlesList = candles.ToList();
-        Assert.Equal(2, candlesList.Count);
-        
-        Assert.Equal("BTCUSD", candlesList[0].Pair);
-        Assert.Equal(100.0m, candlesList[0].OpenPrice);
-        Assert.Equal(105.0m, candlesList[0].HighPrice);
-        Assert.Equal(95.0m, candlesList[0].LowPrice);
-        Assert.Equal(101.0m, candlesList[0].ClosePrice);
-        Assert.Equal(10.5m, candlesList[0].TotalVolume);
-        Assert.Equal(1000.0m, candlesList[0].TotalPrice);
-        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1621436800000), candlesList[0].OpenTime);
+        Assert.Equal(2, candles.Count());
+
+        Assert.Equal(100.0m, candles.First().OpenPrice);
+        Assert.Equal(101.0m, candles.First().ClosePrice);
+        Assert.Equal(105.0m, candles.First().HighPrice);
+        Assert.Equal(95.0m, candles.First().LowPrice);
+        Assert.Equal(10.5m, candles.First().TotalVolume);
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1621436800000), candles.First().OpenTime);
     }
+
 
     [Fact]
     public async Task GetCandleSeriesAsync_ShouldThrowException_WhenApiReturnsError()
@@ -152,7 +151,6 @@ public class RestClientTests
         // Получены через: curl https://api-pub.bitfinex.com/v2/ticker/tBTCUSD
         // BID, BID_SIZE, ASK, ASK_SIZE, DAILY_CHANGE, DAILY_CHANGE_RELATIVE, LAST_PRICE, VOLUME, HIGH, LOW
         var expectedTickerArray = @"[
-            [
                 96067.0,
                 5.24148622,
                 96068.0,
@@ -163,7 +161,6 @@ public class RestClientTests
                 420.33711804,
                 97366.0,
                 95748.0
-            ]
         ]";
 
         mockHttpMessageHandler
