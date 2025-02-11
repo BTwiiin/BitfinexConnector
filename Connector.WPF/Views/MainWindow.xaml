@@ -1,0 +1,101 @@
+<Window x:Class="Connector.WPF.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:Connector.WPF.Converters"
+        xmlns:viewmodels="clr-namespace:Connector.WPF.ViewModels"
+        xmlns:views="clr-namespace:Connector.WPF.Views"
+        Title="Bitfinex Connector" Height="600" Width="1000">
+    <Window.Resources>
+        <ResourceDictionary>
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="200"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="10">
+            <ComboBox Width="100" 
+                      ItemsSource="{Binding AvailablePairs}"
+                      SelectedItem="{Binding SelectedPair}"/>
+            <Button Content="Connect" 
+                    Command="{Binding ConnectCommand}"
+                    Margin="5,0"/>
+            <Button Content="Disconnect" 
+                    Command="{Binding DisconnectCommand}"
+                    Margin="5,0"/>
+            <Button Content="Refresh" 
+                    Command="{Binding RefreshDataCommand}"
+                    Margin="5,0"/>
+            <Button Content="Clean" 
+                    Command="{Binding CleanDataCommand}"
+                    Margin="5,0"/>
+            <Button Content="Calculate Portfolio" 
+                    Command="{Binding CalculatePortfolioCommand}"
+                    Margin="5"/>
+            <Ellipse Width="12" Height="12" Margin="5,0"
+                     Fill="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="Trades">
+                <ListView ItemsSource="{Binding Trades}">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Time" 
+                                          DisplayMemberBinding="{Binding Time}"/>
+                            <GridViewColumn Header="Price" 
+                                          DisplayMemberBinding="{Binding Price}"/>
+                            <GridViewColumn Header="Amount" 
+                                          DisplayMemberBinding="{Binding Amount}"/>
+                            <GridViewColumn Header="Side" 
+                                          DisplayMemberBinding="{Binding Side}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </GroupBox>
+
+            <GroupBox Header="Candles" Grid.Column="1">
+                <ListView ItemsSource="{Binding Candles}">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Time" 
+                                          DisplayMemberBinding="{Binding OpenTime}"/>
+                            <GridViewColumn Header="Open" 
+                                          DisplayMemberBinding="{Binding OpenPrice}"/>
+                            <GridViewColumn Header="High" 
+                                          DisplayMemberBinding="{Binding HighPrice}"/>
+                            <GridViewColumn Header="Low" 
+                                          DisplayMemberBinding="{Binding LowPrice}"/>
+                            <GridViewColumn Header="Close" 
+                                          DisplayMemberBinding="{Binding ClosePrice}"/>
+                            <GridViewColumn Header="Volume" 
+                                          DisplayMemberBinding="{Binding TotalVolume}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </GroupBox>
+        </Grid>
+
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding PortfolioBalances}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  Margin="10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Currency" 
+                                  Binding="{Binding Key}"/>
+                <DataGridTextColumn Header="Value" 
+                                  Binding="{Binding Value, StringFormat=N8}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window> 
