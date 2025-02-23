@@ -1,6 +1,7 @@
 namespace Connector.API.Clients;
 
 using System.Net.WebSockets;
+using System.Text;
 using Connector.API.Interfaces;
 using Connector.API.Models;
 
@@ -47,8 +48,11 @@ public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
     {
         if (IsConnected) return;
 
-        _ws.Dispose();  
-        _cts.Dispose();
+        await Task.Run(() => 
+        {
+            _ws.Dispose();
+            _cts.Dispose();
+        });
 
         _ws = new WebSocketConnection();
         _cts = new CancellationTokenSource();
@@ -70,15 +74,16 @@ public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
         }
     }
 
-    public async Task DisconnectAsync()
+    public Task DisconnectAsync()
     {
         if (IsConnected)
         {
-            await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", _cts.Token);
+            return _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", _cts.Token);
         }
 
         _ws.Dispose();
         _cts.Cancel();
+        return Task.CompletedTask;
     }
 
     protected abstract Task ConnectInternalAsync();
@@ -107,8 +112,9 @@ public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
                 var result = await _ws.ReceiveAsync(buffer, _cts.Token);
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
-                    var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    await ProcessMessageAsync(message);
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    var copy = string.Concat(message);
+                    _ = Task.Run(() => ProcessMessageAsync(copy));
                 }
             }
             catch (Exception ex) when (!_cts.Token.IsCancellationRequested)
@@ -128,7 +134,10 @@ public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
         }
 
         _reconnectAttempts++;
-        await Task.Delay(_reconnectDelay);
+        // Повторяем попытку подключения через увеличивающийся интервал
+        var delay = TimeSpan.FromSeconds(Math.Pow(2, _reconnectAttempts));
+        await Task.Delay(delay);
+
         await ConnectAsync();
     }
 

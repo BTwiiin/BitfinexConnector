@@ -53,10 +53,19 @@ public class WebSocketClient : BaseWebSocketClient
                 @event = "unsubscribe", 
                 chanId 
             };  
+
             Log($"Sending unsubscribe request: {JsonSerializer.Serialize(msg)}");
-            await SendMessageAsync(JsonSerializer.Serialize(msg));
-            _tradeChannelIds.Remove(pair);
-            _channelPairs.Remove(chanId);
+
+            try
+            {
+                await SendMessageAsync(JsonSerializer.Serialize(msg));
+                _tradeChannelIds.Remove(pair);
+                _channelPairs.Remove(chanId);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to unsubscribe: {ex.Message}");
+            }
         }
         else
         {
@@ -99,10 +108,23 @@ public class WebSocketClient : BaseWebSocketClient
                 @event = "unsubscribe", 
                 chanId 
             };
+
             Log($"Unsubscribing from candles: {pair}, chanId: {chanId}");
-            await SendMessageAsync(JsonSerializer.Serialize(msg));
-            _candleChannelIds.Remove(pair);
-            _channelPairs.Remove(chanId);
+
+            try
+            {
+                await SendMessageAsync(JsonSerializer.Serialize(msg));
+                _candleChannelIds.Remove(pair);
+                _channelPairs.Remove(chanId);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to unsubscribe: {ex.Message}");
+            }
+        }
+        else
+        {
+            Log($"No chanId found for pair: '{pair}'. Cannot unsubscribe.");
         }
     }
 
@@ -119,9 +141,6 @@ public class WebSocketClient : BaseWebSocketClient
     {
         try
         {
-            //Log($"Received WS message: {message}");
-            await Task.Yield();
-
             // Skip processing split/incomplete messages
             if (message.StartsWith(",") || message.StartsWith(".") || 
                 message.All(c => char.IsDigit(c) || c == ',' || c == '.'))
@@ -147,9 +166,9 @@ public class WebSocketClient : BaseWebSocketClient
         }
     }
 
-    private async Task ProcessCompleteMessage(JsonElement root)
+    private Task ProcessCompleteMessage(JsonElement root)
     {
-        if (!IsValidMessage(root)) return;
+        if (!IsValidMessage(root)) return Task.CompletedTask;
 
         if (root.ValueKind == JsonValueKind.Array)
         {
@@ -157,21 +176,21 @@ public class WebSocketClient : BaseWebSocketClient
             
             // Skip heartbeat messages
             if (root[1].ValueKind == JsonValueKind.String && root[1].GetString() == "hb")
-                return;
+                return Task.CompletedTask;
 
             if (!_channelPairs.TryGetValue(channelId, out var pair))
             {
                 Log($"Unknown channel ID: {channelId}");
-                return;
+                return Task.CompletedTask;
             }
 
             // Handle trades
-            if (root[1].ValueKind == JsonValueKind.String && root[1].GetString() == "tu")
+            var messageType = root[1].ValueKind == JsonValueKind.String ? root[1].GetString() : null;
+            if (messageType == "tu")
             {
-                if (!TryParseTradeData(root[2], pair, out var trade) || trade == null) return;
+                if (!TryParseTradeData(root[2], pair, out var trade) || trade == null) return Task.CompletedTask;
                 OnTradeReceived?.Invoke(trade);
             }
-            // Handle candles
             else if (root[1].ValueKind == JsonValueKind.Array)
             {
                 // Handle both single candle updates and snapshot arrays
@@ -228,6 +247,7 @@ public class WebSocketClient : BaseWebSocketClient
                 }
             }
         }
+        return Task.CompletedTask;
     }
 
     private bool IsValidMessage(JsonElement root)

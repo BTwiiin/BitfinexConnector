@@ -22,6 +22,24 @@ public class RestClient : BaseRestClient
     private const string BaseUrl = "https://api-pub.bitfinex.com/v2/";
     private const string LogFile = "rest_client.log";
 
+    private string GetTimeframe(int periodInSec)
+    {
+        return periodInSec switch
+        {
+            60 => "1m",
+            300 => "5m",
+            900 => "15m",
+            1800 => "30m",
+            3600 => "1h",
+            7200 => "2h",
+            14400 => "4h",
+            21600 => "6h",
+            43200 => "12h",
+            86400 => "1D",
+            _ => "1m"
+        };
+    }
+
     private void Log(string message)
     {
         var logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} - {message}";
@@ -96,24 +114,6 @@ public class RestClient : BaseRestClient
                 TotalVolume = c[5]
             }) ?? new List<Candle>();
         });
-    }
-
-    private string GetTimeframe(int periodInSec)
-    {
-        return periodInSec switch
-        {
-            60 => "1m",
-            300 => "5m",
-            900 => "15m",
-            1800 => "30m",
-            3600 => "1h",
-            7200 => "2h",
-            14400 => "4h",
-            21600 => "6h",
-            43200 => "12h",
-            86400 => "1D",
-            _ => "1m"
-        };
     }
 
     public override async Task<Ticker> GetTickerAsync(string pair)

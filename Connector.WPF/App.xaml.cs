@@ -27,11 +27,12 @@ public partial class App : Application
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<HttpClient>();
-        services.AddSingleton<IWebSocketClient, WebSocketClient>();
-        services.AddSingleton<IRestClient, RestClient>();
+        services.AddSingleton<WebSocketClient>();
+        services.AddSingleton<RestClient>();
         services.AddSingleton<PortfolioCalculator>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
+        
     }
 
     protected override void OnStartup(StartupEventArgs e)

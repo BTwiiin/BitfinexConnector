@@ -6,7 +6,7 @@ using System.Net.WebSockets;
 /// <remarks>
 /// ClientWebSocket - класс нельзя мокать
 /// Паттерн "Адаптер" - используем этот класс для тестирования
-/// <remarks>
+/// </remarks>
 public class WebSocketConnection : IWebSocketConnection
 {
     private readonly ClientWebSocket _ws;

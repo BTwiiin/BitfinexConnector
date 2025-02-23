@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Connector.API.Models;
 using Connector.API.Clients;
 using System.Diagnostics;
+using Connector.API.Interfaces;
 
 namespace Connector.WPF.ViewModels
 {
