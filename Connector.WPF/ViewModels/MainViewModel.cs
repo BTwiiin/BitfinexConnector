@@ -5,7 +5,6 @@ using CommunityToolkit.Mvvm.Input;
 using Connector.API.Models;
 using Connector.API.Clients;
 using System.Diagnostics;
-using System.Collections.Generic;
 
 namespace Connector.WPF.ViewModels
 {
@@ -21,6 +20,8 @@ namespace Connector.WPF.ViewModels
 
         [ObservableProperty]
         private string _selectedPair = "BTCUSD";
+
+        private string? _previousPair;
 
         public ObservableCollection<Trade> Trades { get; } = new();
         public ObservableCollection<Candle> Candles { get; } = new();
@@ -51,7 +52,7 @@ namespace Connector.WPF.ViewModels
             };
 
             // Make sure SelectedPair is set to a valid value
-            SelectedPair = AvailablePairs.FirstOrDefault();
+            SelectedPair = AvailablePairs.FirstOrDefault() ?? "BTCUSD";
 
             _wsClient.OnTradeReceived += trade => 
             {
@@ -80,6 +81,7 @@ namespace Connector.WPF.ViewModels
                 await _wsClient.ConnectAsync();
                 await _wsClient.SubscribeToTradesAsync(SelectedPair);
                 await _wsClient.SubscribeToCandlesAsync(SelectedPair, 60);
+                _previousPair = SelectedPair;
                 IsConnected = true;
             }
             catch (Exception ex)
@@ -134,12 +136,16 @@ namespace Connector.WPF.ViewModels
             Debug.WriteLine($"Selected pair changed to: {value}");
             if (IsConnected)
             {
-                Application.Current.Dispatcher.Invoke(async () =>
+                Application.Current.Dispatcher.BeginInvoke(async () =>
                 {
                     try
                     {
-                        await _wsClient.UnsubscribeFromTradesAsync(SelectedPair);
-                        await _wsClient.UnsubscribeFromCandlesAsync(SelectedPair);
+                        if (!string.IsNullOrEmpty(_previousPair))
+                        {
+                            await _wsClient.UnsubscribeFromTradesAsync(_previousPair);
+                            await _wsClient.UnsubscribeFromCandlesAsync(_previousPair);
+                            _previousPair = SelectedPair;
+                        }
                         
                         await _wsClient.SubscribeToTradesAsync(value);
                         await _wsClient.SubscribeToCandlesAsync(value, 60);

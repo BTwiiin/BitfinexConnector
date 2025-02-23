@@ -31,7 +31,7 @@ public class WebSocketClient : BaseWebSocketClient
 
     protected override async Task ConnectInternalAsync()
     {
-        await base.SendMessageAsync(JsonSerializer.Serialize(new { @event = "conf", flags = 32768 }));
+        await SendMessageAsync(JsonSerializer.Serialize(new { @event = "conf", flags = 32768 }));
     }
 
     public override async Task SubscribeToTradesAsync(string pair)
@@ -46,16 +46,21 @@ public class WebSocketClient : BaseWebSocketClient
 
     public override async Task UnsubscribeFromTradesAsync(string pair)
     {
+        Log($"Attempting to unsubscribe from trades for pair: '{pair}'");
         if (_tradeChannelIds.TryGetValue(pair, out int chanId))
         {
             var msg = new { 
                 @event = "unsubscribe", 
-                chanId = chanId 
-            };
-            Log($"Unsubscribing from trades: {pair}, chanId: {chanId}");
+                chanId 
+            };  
+            Log($"Sending unsubscribe request: {JsonSerializer.Serialize(msg)}");
             await SendMessageAsync(JsonSerializer.Serialize(msg));
             _tradeChannelIds.Remove(pair);
             _channelPairs.Remove(chanId);
+        }
+        else
+        {
+            Log($"No chanId found for pair: '{pair}'. Cannot unsubscribe.");
         }
     }
 
@@ -74,7 +79,7 @@ public class WebSocketClient : BaseWebSocketClient
             _ => throw new ArgumentException($"Неподдерживаемый период: {periodInSec}")
         };
 
-        Trace.WriteLine($"Subscribing to candles: {pair}, timeframe: {timeframe}");
+        Log($"Subscribing to candles: {pair}, timeframe: {timeframe}");
 
         var msg = new { 
             @event = "subscribe", 
@@ -82,7 +87,7 @@ public class WebSocketClient : BaseWebSocketClient
             key = $"trade:{timeframe}:t{pair}" 
         };
         var jsonMsg = JsonSerializer.Serialize(msg);
-        Trace.WriteLine($"Sending subscription message: {jsonMsg}");
+        Log($"Sending subscription message: {jsonMsg}");
         await SendMessageAsync(jsonMsg);
     }
 
@@ -92,7 +97,7 @@ public class WebSocketClient : BaseWebSocketClient
         {
             var msg = new { 
                 @event = "unsubscribe", 
-                chanId = chanId 
+                chanId 
             };
             Log($"Unsubscribing from candles: {pair}, chanId: {chanId}");
             await SendMessageAsync(JsonSerializer.Serialize(msg));
@@ -114,7 +119,7 @@ public class WebSocketClient : BaseWebSocketClient
     {
         try
         {
-            Log($"Received WS message: {message}");
+            //Log($"Received WS message: {message}");
             await Task.Yield();
 
             // Skip processing split/incomplete messages
@@ -192,18 +197,19 @@ public class WebSocketClient : BaseWebSocketClient
         }
         else if (root.TryGetProperty("event", out var eventProp))
         {
-            Trace.WriteLine($"Received event: {eventProp.GetString()}");
+            Log($"Received event: {eventProp.GetString()}");
             if (eventProp.GetString() == "subscribed")
             {
                 var channelId = root.GetProperty("chanId").GetInt32();
                 var channel = root.GetProperty("channel").GetString();
-                Trace.WriteLine($"Subscription confirmed - Channel: {channel}, ID: {channelId}");
+                Log($"Subscription confirmed - Channel: {channel}, ID: {channelId}");
                 if (channel == "trades" && root.TryGetProperty("symbol", out var symbolProp))
                 {
                     var symbol = symbolProp.GetString();
                     var pair = symbol?.Substring(1); // Remove 't' prefix
                     if (pair != null)
                     {
+                        Log($"Added trade channel mapping - Pair: {pair}, ChannelId: {channelId}");
                         _channelPairs[channelId] = pair;
                         _tradeChannelIds[pair] = channelId;
                     }
@@ -284,18 +290,18 @@ public class WebSocketClient : BaseWebSocketClient
 public class SubscriptionResponse
 {
     [JsonPropertyName("event")]
-    public string Event { get; set; }
+    public string? Event { get; set; }
 
     [JsonPropertyName("channel")]
-    public string Channel { get; set; }
+    public string? Channel { get; set; }
 
     [JsonPropertyName("chanId")]
     public int ChanId { get; set; }
 
     [JsonPropertyName("symbol")]
-    public string Symbol { get; set; }
+    public string? Symbol { get; set; }
 
     [JsonPropertyName("key")]
-    public string Key { get; set; }
+    public string? Key { get; set; }
 }
 

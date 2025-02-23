@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Connector.API.Clients;
 using Connector.WPF.ViewModels;
 using Connector.WPF.Views;
+using Connector.API.Interfaces;
 
 namespace Connector.WPF;
 
@@ -26,8 +27,8 @@ public partial class App : Application
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<HttpClient>();
-        services.AddSingleton<WebSocketClient>();
-        services.AddSingleton<RestClient>();
+        services.AddSingleton<IWebSocketClient, WebSocketClient>();
+        services.AddSingleton<IRestClient, RestClient>();
         services.AddSingleton<PortfolioCalculator>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();

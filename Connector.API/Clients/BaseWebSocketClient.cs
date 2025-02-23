@@ -10,11 +10,9 @@ using Connector.API.Models;
 /// Управляет жизненным циклом соединения
 /// </summary>
 public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
-
-
 {
-    private readonly IWebSocketConnection _ws;
-    private readonly CancellationTokenSource _cts;
+    private IWebSocketConnection _ws;
+    private CancellationTokenSource _cts;
     private readonly int _maxReconnectAttempts = 5;
     private readonly TimeSpan _reconnectDelay = TimeSpan.FromSeconds(5);
     private int _reconnectAttempts;
@@ -49,6 +47,12 @@ public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
     {
         if (IsConnected) return;
 
+        _ws.Dispose();  
+        _cts.Dispose();
+
+        _ws = new WebSocketConnection();
+        _cts = new CancellationTokenSource();
+
         try
         {
             // Сначала подключаемся
@@ -72,6 +76,9 @@ public abstract class BaseWebSocketClient : IWebSocketClient, IDisposable
         {
             await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", _cts.Token);
         }
+
+        _ws.Dispose();
+        _cts.Cancel();
     }
 
     protected abstract Task ConnectInternalAsync();
